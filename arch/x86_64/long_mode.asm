@@ -125,7 +125,7 @@ gdt64_ptr:
 ; Reference: https://wiki.osdev.org/TSS
 ; ---------------------------------------------------------------------------
 section .bss
-align 16
+alignb 16
 
 global tss64
 tss64:
@@ -158,7 +158,7 @@ tss64:
 tss64_end:
 
 ; Stack for IST1 (used for NMI / double fault handlers)
-align 4096
+alignb 4096
 ist1_stack:
     resb 8192
 ist1_stack_top:
