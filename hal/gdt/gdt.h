@@ -62,6 +62,10 @@ typedef struct tss_descriptor {
 #define GDT_ACCESS_PRESENT      0x80
 #define GDT_ACCESS_RING0        0x00
 #define GDT_ACCESS_RING3        0x60
+/* Descriptor-type (S) bit: 1 = code/data segment, 0 = system segment (TSS).
+ * Code/data descriptors MUST set this or the CPU treats them as system
+ * descriptors and loading them into a segment register faults (#GP). */
+#define GDT_ACCESS_SEGMENT      0x10
 #define GDT_ACCESS_TYPE_TSS_AVAIL 0x09  /* 64-bit available TSS */
 #define GDT_ACCESS_TYPE_TSS_BUSY  0x0B  /* 64-bit busy TSS */
 
@@ -80,8 +84,8 @@ void gdt_set_entry(int index, uint32_t base, uint32_t limit,
 /* Set the TSS descriptor in the GDT */
 void gdt_set_tss(int index, uintptr_t tss_addr, uint32_t limit);
 
-/* Reload segment registers after GDT changes */
-void gdt_reload_segments(void);
+/* Reload segment registers after GDT changes (code_sel -> CS, data_sel -> ds/es/ss) */
+void gdt_reload_segments(uint16_t code_sel, uint16_t data_sel);
 
 /* Load the TSS into the Task Register (TR) */
 void gdt_load_tss(uint16_t selector);
