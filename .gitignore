@@ -1,0 +1,9 @@
+# gOS Build Artifacts
+build/
+iso/
+*.iso
+*.elf
+*.o
+*.d
+*.sym
+*.map
