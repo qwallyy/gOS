@@ -2,8 +2,7 @@
 ; Reference: https://wiki.osdev.org/Xen_PVH
 ; QEMU looks for a .note.Xen section with type 0x12
 
-section .note.Xen type=note
-align 4
+section .note.Xen note align=4
 
     dd 4                    ; n_namesz (including null terminator)
     dd 8                    ; n_descsz (uint64_t entry point)

@@ -37,6 +37,15 @@ SECTIONS
         *(.text.boot)
     } :boot
 
+    /* PVH ELF Note for QEMU -kernel direct boot. Kept in low memory inside the
+     * boot PT_LOAD (so it is an actual loaded section, not just PT_NOTE — that
+     * avoids ld's "allocated section not in segment" warning) and also exposed
+     * via the PT_NOTE segment so QEMU's PVH loader can find PHYS32_ENTRY. */
+    .note.Xen ALIGN(4) :
+    {
+        *(.note.Xen)
+    } :boot :note
+
     /* Transition to the higher half. Add the full base so each higher-half
      * section's load (physical) address — AT(ADDR - 0xFFFFFFFF80000000) —
      * stays contiguous with the boot sections above 1MB. Subtracting 0x100000
@@ -89,12 +98,6 @@ SECTIONS
 
     /* Kernel end marker */
     _kernel_end = .;
-
-    /* PVH ELF Note for QEMU direct boot */
-    .note.Xen :
-    {
-        *(.note.Xen)
-    } :note
 
     /DISCARD/ :
     {
