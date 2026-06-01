@@ -57,7 +57,7 @@ STUB_ELF    = $(BUILD_DIR)/stub.elf
 STUB_BIN    = $(BUILD_DIR)/stub.bin
 DISK_BOOT_BIN = $(BUILD_DIR)/disk_boot.bin
 
-.PHONY: all clean iso run debug disk_boot
+.PHONY: all clean iso run run-kernel run-stub debug disk_boot
 
 all: $(KERNEL_ELF)
 
@@ -106,9 +106,19 @@ iso: $(KERNEL_ELF)
 	@mkdir -p $(ISO_DIR)/boot/grub
 	cp $(KERNEL_ELF) $(ISO_DIR)/boot/kernel.elf
 	cp grub/grub.cfg $(ISO_DIR)/boot/grub/grub.cfg
-	grub-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null || \
-		grub2-mkrescue -o $(KERNEL_ISO) $(ISO_DIR) 2>/dev/null || \
-		xorriso -as mkisofs -R -b boot/grub/grub.img -no-emul-boot -boot-load-size 4 -boot-info-table -o $(KERNEL_ISO) $(ISO_DIR)
+	@mkrescue=""; \
+	for c in grub-mkrescue grub2-mkrescue x86_64-elf-grub-mkrescue i686-elf-grub-mkrescue; do \
+		if command -v $$c >/dev/null 2>&1; then mkrescue=$$c; break; fi; \
+	done; \
+	if [ -z "$$mkrescue" ]; then \
+		echo "ERROR: grub-mkrescue not found (needs grub + xorriso + mtools). Install:"; \
+		echo "  macOS:  brew install x86_64-elf-grub xorriso mtools"; \
+		echo "  Debian: sudo apt-get install grub-pc-bin grub-common xorriso mtools"; \
+		echo "Or skip the ISO and boot the kernel directly: make run-kernel"; \
+		exit 1; \
+	fi; \
+	echo "Using $$mkrescue"; \
+	$$mkrescue -o $(KERNEL_ISO) $(ISO_DIR)
 	@echo "[ISO]  $(KERNEL_ISO)"
 
 run: iso
@@ -117,6 +127,16 @@ run: iso
 		-m 256M \
 		-serial stdio \
 		-d int,cpu_reset \
+		-no-reboot \
+		-no-shutdown
+
+# Boot the kernel ELF directly via QEMU's multiboot loader — no GRUB/ISO needed.
+# Handy on hosts without grub-mkrescue (e.g. macOS).
+run-kernel: $(KERNEL_ELF)
+	qemu-system-x86_64 \
+		-kernel $(KERNEL_ELF) \
+		-m 256M \
+		-serial stdio \
 		-no-reboot \
 		-no-shutdown
 
