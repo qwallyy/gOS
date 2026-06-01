@@ -9,12 +9,12 @@ extern _start
 
 ; Multiboot2 header magic and structure
 ; Reference: https://wiki.osdev.org/Multiboot2
-; Total size = 0x58 (88 bytes), checksum = 0x17ADAED2
+; Total size = 0x48 (72 bytes), checksum = 0x17ADAEE2
 mb2_header:
     dd 0xE85250D6           ; Multiboot2 magic number
     dd 0                    ; Architecture: 0 = i386 (we switch to long mode)
-    dd 0x58                 ; Header length
-    dd 0x17ADAED2           ; Checksum
+    dd 0x48                 ; Header length
+    dd 0x17ADAEE2           ; Checksum
 
     ; Information request tag: ask GRUB for memory map, framebuffer, and ACPI
     align 8
@@ -27,12 +27,12 @@ mb2_header:
     dd 14                   ; ACPI old RSDP
     dd 15                   ; ACPI new RSDP
 
-    ; Address tag: specify load base (0x100000 = 1MB)
-    align 8
-    dw 21                   ; Type: image load base physical address
-    dw 0                    ; Flags
-    dd 12                   ; Size
-    dd 0x00100000           ; Load base address
+    ; NOTE: there is no valid multiboot2 *header* tag for "load base address".
+    ; Type 21 ("image load base physical address") is a *boot information* tag
+    ; the bootloader passes TO the kernel — not a header tag. A required header
+    ; tag GRUB doesn't recognise makes it abort before launching the kernel
+    ; (hence the ISO booting to a blank screen). The ELF program headers already
+    ; specify the load addresses, so no address tag is needed here.
 
     ; Entry address tag
     align 8
