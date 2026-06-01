@@ -36,29 +36,29 @@ void gdt_init(void) {
      * Granularity: 64-bit long mode active
      */
     gdt_set_entry(1, 0, 0,
-                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING0 | 0x0A,
+                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING0 | GDT_ACCESS_SEGMENT | 0x0A,
                   GDT_GRAN_64BIT);
 
     /* 0x10: 64-bit kernel data segment
      * Access: Present | Ring 0 | Data | Writable
      */
     gdt_set_entry(2, 0, 0,
-                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING0 | 0x02,
+                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING0 | GDT_ACCESS_SEGMENT | 0x02,
                   GDT_GRAN_64BIT);
 
     /* 0x18: 32-bit user code segment (compatibility mode for user tasks) */
     gdt_set_entry(3, 0, 0xFFFFFFFF,
-                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | 0x0A,
+                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | GDT_ACCESS_SEGMENT | 0x0A,
                   GDT_GRAN_4K | GDT_GRAN_32BIT);
 
     /* 0x20: 64-bit user data segment */
     gdt_set_entry(4, 0, 0,
-                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | 0x02,
+                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | GDT_ACCESS_SEGMENT | 0x02,
                   GDT_GRAN_64BIT);
 
     /* 0x28: 64-bit user code segment */
     gdt_set_entry(5, 0, 0,
-                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | 0x0A,
+                  GDT_ACCESS_PRESENT | GDT_ACCESS_RING3 | GDT_ACCESS_SEGMENT | 0x0A,
                   GDT_GRAN_64BIT);
 
     /* 0x30 + 0x38: TSS descriptor (16 bytes, two entries)
@@ -74,7 +74,7 @@ void gdt_init(void) {
     lgdt(&g_gdt_ptr);
 
     /* Reload segment registers to use the new GDT */
-    gdt_reload_segments();
+    gdt_reload_segments(GDT_KERNEL_CODE, GDT_KERNEL_DATA);
 
     /* Initialize TSS and load it into TR */
     tss_init();
