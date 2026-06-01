@@ -19,19 +19,27 @@ static char *int_to_str_internal(long long value, char *str, int base, bool is_u
 
     char *ptr = str;
     bool negative = false;
+    unsigned long long uval;
 
     if (!is_unsigned && value < 0) {
         negative = true;
-        value = -value;
+        /* Negate via unsigned to stay well-defined for LLONG_MIN. */
+        uval = (unsigned long long)(-(value + 1)) + 1ULL;
+    } else {
+        uval = (unsigned long long)value;
     }
 
-    if (value == 0) {
+    /* Digit extraction must use unsigned arithmetic: signed % / / on a value
+     * whose top bit is set (e.g. a higher-half address reinterpreted as a
+     * negative long long) yields negative digits and emits garbage bytes. */
+    if (uval == 0) {
         *ptr++ = '0';
     } else {
-        while (value != 0) {
-            int digit = (int)(value % base);
-            *ptr++ = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
-            value /= base;
+        while (uval != 0) {
+            unsigned int digit = (unsigned int)(uval % (unsigned long long)base);
+            *ptr++ = (digit < 10) ? (char)('0' + digit)
+                                  : (char)('a' + digit - 10);
+            uval /= (unsigned long long)base;
         }
     }
 
