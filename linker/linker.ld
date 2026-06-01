@@ -19,12 +19,6 @@ SECTIONS
     /* Kernel starts at 1MB physical, mapped to higher half at 0xFFFFFFFF80000000 */
     . = 0x100000;
 
-    /* Multiboot1 header for QEMU -kernel direct boot */
-    .multiboot1 ALIGN(4) :
-    {
-        *(.multiboot1)
-    } :boot
-
     /* Multiboot2 header must be in the first 32KB, aligned to 8 bytes */
     .multiboot2 ALIGN(8) :
     {
@@ -43,8 +37,11 @@ SECTIONS
         *(.text.boot)
     } :boot
 
-    /* Transition to higher half virtual address */
-    . += 0xFFFFFFFF80000000 - 0x100000;
+    /* Transition to the higher half. Add the full base so each higher-half
+     * section's load (physical) address — AT(ADDR - 0xFFFFFFFF80000000) —
+     * stays contiguous with the boot sections above 1MB. Subtracting 0x100000
+     * here dragged them down to ~0xb000, through the 0xA0000 VGA/BIOS hole. */
+    . += 0xFFFFFFFF80000000;
 
     /* Kernel text/code section */
     .text ALIGN(4K) : AT(ADDR(.text) - 0xFFFFFFFF80000000)

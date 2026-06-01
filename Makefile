@@ -39,8 +39,10 @@ ISO_DIR   = iso
 # built separately (see the `disk_boot` target) and must NOT be linked into the
 # ELF kernel, so it is excluded here too.
 ASM_SOURCES := $(filter-out boot/disk_boot.asm,$(shell find boot arch hal -name "*.asm" ! -name "test_*.asm" | sort))
-# Ensure multiboot1 header comes before multiboot2 header in link order
-ASM_SOURCES := boot/multiboot1_header.asm boot/multiboot2_header.asm $(filter-out boot/multiboot1_header.asm boot/multiboot2_header.asm,$(ASM_SOURCES))
+# Keep the multiboot2 header first so it lands in the first 32KB of the image.
+# (There is no multiboot1 header: QEMU's multiboot loader rejects 64-bit ELFs
+# outright, so QEMU -kernel loads us via the PVH note instead — see pvh_note.s.)
+ASM_SOURCES := boot/multiboot2_header.asm $(filter-out boot/multiboot2_header.asm,$(ASM_SOURCES))
 S_SOURCES   := boot/pvh_note.s
 C_SOURCES   := $(filter-out boot/stub.c,$(shell find boot kernel hal drivers mm fs net lib proc sys power security ipc time acpi apic dma errno arch -name "*.c" | sort))
 
