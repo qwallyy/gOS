@@ -20,8 +20,11 @@ extern long_mode_start
 ;   EBX = physical address of multiboot2 info structure
 _start:
     ; Debug: write 'B' to COM1 serial port
+    ; Port 0x3F8 > 0xFF, so it must go through DX (the imm8 form of OUT
+    ; would truncate the port to 0xF8).
     mov al, 'B'
-    out 0x3F8, al
+    mov dx, 0x3F8
+    out dx, al
 
     ; Save multiboot2 info pointer (EBX) before it gets clobbered
     mov [mb2_info_ptr], ebx
@@ -204,27 +207,29 @@ gdt64_desc:
     dd gdt64
     dd 0                    ; Upper 32 bits (for 64-bit GDTR)
 
-; Page tables (must be page-aligned)
+; Page tables (must be page-aligned). Kept in .boot (a loaded, low-memory
+; section), so use `times db 0` rather than `resb`, which would warn about
+; reserving uninitialized space in a non-BSS section.
 align 4096
 pml4_table:
-    resb 4096
+    times 4096 db 0
 pdpt_low:
-    resb 4096
+    times 4096 db 0
 pdpt_high:
-    resb 4096
+    times 4096 db 0
 pd_table:
-    resb 4096
+    times 4096 db 0
 pml4_table_end:
 
 ; Temporary boot stack (16KB)
 align 16
 temp_stack:
-    resb 16384
+    times 16384 db 0
 temp_stack_top:
 
 ; Range to clear at boot
 align 4
 boot_clear_start:
-    resb 4
+    times 4 db 0
 boot_clear_end:
-    resb 4
+    times 4 db 0

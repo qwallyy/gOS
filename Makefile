@@ -33,8 +33,12 @@ LDFLAGS = -T linker/linker.ld -nostdlib -melf_x86_64
 BUILD_DIR = build
 ISO_DIR   = iso
 
-# Source files — auto-discovered, excluding tests
-ASM_SOURCES := $(shell find boot arch hal -name "*.asm" | sort)
+# Source files — auto-discovered, excluding tests (boot/test_*.asm), which each
+# define their own `_start` and would collide at link time.
+# boot/disk_boot.asm is a standalone [org 0x7c00] flat-binary boot sector; it is
+# built separately (see the `disk_boot` target) and must NOT be linked into the
+# ELF kernel, so it is excluded here too.
+ASM_SOURCES := $(filter-out boot/disk_boot.asm,$(shell find boot arch hal -name "*.asm" ! -name "test_*.asm" | sort))
 # Ensure multiboot1 header comes before multiboot2 header in link order
 ASM_SOURCES := boot/multiboot1_header.asm boot/multiboot2_header.asm $(filter-out boot/multiboot1_header.asm boot/multiboot2_header.asm,$(ASM_SOURCES))
 S_SOURCES   := boot/pvh_note.s
@@ -51,8 +55,9 @@ KERNEL_ELF  = $(BUILD_DIR)/kernel.elf
 KERNEL_ISO  = gOS.iso
 STUB_ELF    = $(BUILD_DIR)/stub.elf
 STUB_BIN    = $(BUILD_DIR)/stub.bin
+DISK_BOOT_BIN = $(BUILD_DIR)/disk_boot.bin
 
-.PHONY: all clean iso run debug
+.PHONY: all clean iso run debug disk_boot
 
 all: $(KERNEL_ELF)
 
@@ -88,6 +93,14 @@ $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 	@echo "[CC]   $@"
+
+# Standalone 512-byte disk boot sector (flat binary, not part of the ELF kernel)
+disk_boot: $(DISK_BOOT_BIN)
+
+$(DISK_BOOT_BIN): boot/disk_boot.asm
+	@mkdir -p $(dir $@)
+	$(AS) -f bin $< -o $@
+	@echo "[BIN]  $@"
 
 iso: $(KERNEL_ELF)
 	@mkdir -p $(ISO_DIR)/boot/grub
