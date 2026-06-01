@@ -140,10 +140,14 @@ setup_page_tables:
     or eax, 0x03
     mov [pdpt_low], eax
 
-    ; PDPT_HIGH[0] -> pd (same pd_table for higher half)
+    ; PDPT_HIGH[510] -> pd (same pd_table for the higher half).
+    ; The kernel is linked at 0xFFFFFFFF80000000, which decodes to
+    ; PML4[511]/PDPT[510]/PD[0] — so the entry must go in slot 510, not 0.
+    ; (Slot 0 maps 0xFFFFFF8000000000, leaving the kernel window unmapped and
+    ; triple-faulting on the first higher-half instruction fetch.)
     mov eax, pd_table
     or eax, 0x03
-    mov [pdpt_high], eax
+    mov [pdpt_high + 510 * 8], eax
 
     ; Fill PD with 2MB huge pages mapping 0-1GB
     mov edi, pd_table
