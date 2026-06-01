@@ -8,6 +8,10 @@
 section .text.boot
 bits 64
 
+; This file relies on absolute addressing (e.g. `lgdt [gdt64_ptr]`); state it
+; explicitly so NASM 3.x doesn't warn that the implicit default is deprecated.
+default abs
+
 global long_mode_start
 extern kernel_early_init
 extern kernel_main
